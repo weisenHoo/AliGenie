@@ -13,6 +13,9 @@
       :check="val.check"
     >
     </push-bar>
+
+    <!--测试区-->
+    <textarea cols="100" rows="50">{{deviceStatus}}</textarea>
   </div>
 </template>
 

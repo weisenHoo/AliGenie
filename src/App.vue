@@ -1,7 +1,6 @@
 <template>
     <div id="appview">
-        <iot-header :data='navBarData'></iot-header>
-        <!--<div><span>{{navBarData.title}}</span></div>-->
+        <!--<iot-header :data='navBarData'></iot-header>-->
         <router-view/>
     </div>
 </template>

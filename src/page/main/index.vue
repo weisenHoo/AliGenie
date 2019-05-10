@@ -1,46 +1,62 @@
 <template>
     <div class="main">
         <!-- 设备信息 -->
-        <div class="deviceInfo">
+        <div class="deviceInfo" @touchstart="onTouch" @touchmove="touchMove">
+            <div class="mask" :style="`opacity: ${temp};`"></div>
             <div class="title">
-                <icon class="i" icon="iconfanhui"></icon>
+                <icon class="i" icon="iconzuo" @click="back"></icon>
                 {{navBarData.title}}
             </div>
-            <div class="controller_block" @touchmove="touchstart">
-                <a class="slider slider-top" href="javascript:;">
+            <div class="controller_block">
+                <span class="slider slider-top">
                     上下滑动调节亮度
                     <icon class="i" icon="iconsanjiantou" iconColor="#fff" :iconSize="50"/>
-                </a>
-                <div class="prm"><!--5000k 50%--> {{lastPosX}} {{lastPosY}}</div>
-                <a class="slider slider-right" href="javascript:;">
+                </span>
+                <div class="prm">{{deviceStatus.brightness}}%</div>
+                <span class="slider slider-right">
                     左右滑动调节色温
                     <icon class="i" icon="iconsanjiantou" iconColor="#fff" :iconSize="50"/>
-                </a>
+                </span>
             </div>
         </div>
 
-        <!-- 控制按钮 -->
-        <div class="btn_group">
-            <a class="btn" href="javascript:;">
-                <icon icon="iconiconset0253" :iconSize="30" iconColor="#ccc"/>
+        <!--Tab-title-->
+        <div class="tab">
+            <a href="javascript:;" @click="()=>{tab1=1;tab2=0;}" :style="`color: ${tab1?'#666':'#ccc'};${tab1?'':'border:none;'}`">控制</a>
+            <a href="javascript:;" @click="()=>{tab1=0;tab2=1;}" :style="`color: ${tab2?'#666':'#ccc'};${tab2?'':'border:none;'}`">命令</a>
+        </div>
+
+        <!-- 控制 -->
+        <div class="btn_group" v-show="tab1">
+            <a class="btn" href="javascript:;" @click="onOpen">
+                <icon icon="iconiconset0253" :iconSize="30" :iconColor="deviceStatus.powerstate?'#666':'#ccc'"/>
                 <br>
                 开关
             </a>
-            <a class="btn" href="javascript:;">
+            <a class="btn" href="javascript:;" @click="onMode('movie')">
                 <icon icon="iconiconset0163" :iconSize="30" iconColor="#ccc"/>
                 <br>
                 听音乐
             </a>
-            <a class="btn" href="javascript:;">
+            <a class="btn" href="javascript:;" @click="onMode('night')">
                 <icon icon="iconmoonyueliang" :iconSize="30" iconColor="#ccc"/>
                 <br>
                 小夜灯
             </a>
-            <a class="btn" href="javascript:;">
+            <a class="btn" href="javascript:;" @click="onMode('reading')">
                 <icon icon="iconshudian" :iconSize="30" iconColor="#ccc"></icon>
                 <br>
                 看书
             </a>
+        </div>
+
+        <!--命令-->
+        <div class="product_function_corpus" v-show="tab2">
+            <ul v-for="(product, index) in productFunctionCorpus" :key="index">
+                <li v-for="(p, k) in product.corpusList" :key="k">
+                    天猫精灵，{{p}}
+                </li>
+            </ul>
         </div>
 
         <!-- 时间设置 -->
@@ -49,6 +65,8 @@
             <icon icon="iconiconset0420"></icon>
         </div>
 
+        <!--测试区-->
+        <!--<textarea cols="100" rows="200">{{productInfo}}</textarea>-->
     </div>
 </template>
 
@@ -58,14 +76,18 @@ import {PushBar, Icon} from 'genie-ui';
 
 export default {
   name: 'Main',
-  components: {
-    PushBar,
-    Icon
-  },
+  components: {PushBar, Icon},
   data() {
     return {
+      startPosX: 0,
+      startPosY: 0,
       lastPosX: 0,
       lastPosY: 0,
+      temp: 0.2,
+      deviceActions: {},
+      productFunctionCorpus: {},
+      tab1: 1,
+      tab2: 0,
     };
   },
   computed: {
@@ -75,46 +97,29 @@ export default {
 
       // 产品信息详情
       productInfo: state => {
-        return state.base.productInfo;
+        const base = state.base.productInfo
+        // return state.base.productInfo;
+        return base;
       },
 
       // 设备status
       deviceStatus(state) {
         const attr = state.publicInfo.attr;
-        const onlinestate = attr.onlinestate === 'online' ? '在线' : '离线';
-        const powerstate = attr.powerstate === 1;
-        return [{
-          text: '设备状态',
-          descColor: '#4a4a4a',
-          desc: onlinestate
-        }, {
-          check: powerstate,
-          text: '开关状态',
-          type: 'switch',
-          clickBack: (val) => {
-            this.$store.dispatch('setDeviceStatus', {
-              powerstate: val.check ? 0 : 1
-            });
-          }
-        }]
-      },
-
-      // 在线状态
-      onlinestate: state => {
-        const onlinestate = state.publicInfo.attr.onlinestate;
-        return onlinestate === 'online' ? '在线' : '离线';
-      },
-
-      // 开关状态
-      powerstate: state => {
-        const powerstate = state.publicInfo.attr.powerstate;
-        return powerstate === 1;
+        return attr
       },
     }),
   },
   created() {
+    console.log('this.$route.query：', this.$route.query);
+    this.$nextTick(() => {
+      this.setNavbar(); // 设置topbar
+    });
   },
   beforeDestroy() {
+    AI.allListenRemove(); // 页面兼听事件取消
+  },
+  mounted() {
+    this.getDeviceActions();
   },
   methods: {
     // 设置topbar
@@ -123,11 +128,81 @@ export default {
         title: this.productInfo.title,
       })
     },
-    touchstart(event) {
-      // 获取起始坐标位置x
-      this.lastPosX = event.touches[0].clientX
-      this.lastPosY = event.touches[0].clientY
+    onTouch(event) {
+      // 获取起始坐标位置x，y
+      this.startPosX = Math.ceil(event.touches[0].clientX);
+      this.startPosY = Math.ceil(event.touches[0].clientY);
     },
+    touchMove(event) {
+      // 获取移动坐标位置x，y
+      let LPX = Math.ceil(event.touches[0].clientX);
+      let LPY = Math.ceil(event.touches[0].clientY);
+      if (Math.abs(LPX - this.startPosX) > Math.abs(LPX - this.startPosY)) {
+        this.lastPosX = this.lastPosX + LPX - this.startPosX;
+        if (this.temp > 1) {
+          this.temp = 1
+        } else if (this.temp < 0) {
+          this.temp = 0
+        } else {
+          this.temp = this.lastPosX;
+          console.log(this.temp)
+        }
+      } else {
+        this.lastPosY = this.lastPosY + (this.startPosY - LPY)
+      }
+    },
+    back() {
+      AI.goBack()
+    },
+    onOpen() {
+      this.$store.dispatch('setDeviceStatus', {
+        powerstate: !this.deviceStatus.powerstate
+      });
+    },
+    onMode(mode) {
+      AI.setDeviceStatus({
+        devId: AI.devId,
+        params: {
+          // 'header': {
+          //   'namespace': 'AliGenie.Iot.Device.Control',
+          //   'name': 'SetMode',
+          //   'messageId': '1bd5d003-31b9-476f-ad03-71d471922820',
+          //   'payLoadVersion': 1
+          // },
+          'payload': {
+            // 'accessToken': AI.productKey,
+            // 'deviceId': this.productInfo.devTypeId,
+            // 'deviceType': this.productInfo.devTypeEn,
+            // 'attribute': 'mode',
+            'value': mode,
+            // 'extensions': {
+            //   'extension1': '',
+            //   'extension2': ''
+            // }
+          }
+        }
+      });
+    },
+    getDeviceActions() {
+      const _this = this;
+
+      // 获取设备完整信息
+      AI.getDeviceActions({
+        devId: AI.devId,
+      }).then(res => {
+        if (res.code !== 'SUCCEED') return false;
+        _this.deviceActions = res.model
+      });
+
+      // 获取语料接口
+      AI.getProductFunctionCorpus().then((res) => {
+        // 返回语料信息
+        if (res.code !== 'SUCCEED') return false;
+        _this.productFunctionCorpus = res.model
+      }).catch((res) => {
+        console.log('失败返回', res);
+      });
+    }
   }
 };
 </script>
@@ -135,42 +210,53 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="less" scoped>
     .deviceInfo {
-        display: flex;
+        width: 100vw;
         height: 60vh;
         margin-bottom: 10px;
         background-color: #fff;
-        flex-direction: column;
         // 背景色
-        background: linear-gradient(135deg, rgb(255, 210, 160), rgb(235, 123, 15)); /* 标准的语法 */
+        background: linear-gradient(135deg, rgb(255, 210, 160), rgb(255, 123, 15)); /* 标准的语法 */
+        position: relative;
+
+        div.mask {
+            opacity: 0.9;
+            width: 100vw;
+            height: 60vh;
+            background: linear-gradient(135deg, rgb(231, 231, 229), rgb(175, 234, 242)); /* 标准的语法 */
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
 
         div.title {
             width: 100vw;
-            height: 44px;
-            margin-top: 50px;
+            height: 5vh;
+            /*margin-top: 50px;*/
+            padding-top: 3vh;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
 
             .i {
-                width: 44px;
-                height: 44px;
+                width: 5vh;
+                height: 5vh;
                 position: absolute;
-                top: 0;
+                bottom: 0;
                 left: 0;
             }
         }
 
         div.controller_block {
             width: 100vw;
-            height: 100%;
+            height: 52vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: space-around;
             position: relative;
 
-            a.slider {
+            span.slider {
                 width: 86vw;
                 height: 60px;
                 line-height: 60px;
@@ -187,7 +273,7 @@ export default {
                 }
             }
 
-            a.slider-top {
+            span.slider-top {
                 .i {
                     transform: rotate(-90deg);
                     bottom: 16px;
@@ -198,6 +284,23 @@ export default {
                 color: #fff;
                 font-size: 40px;
             }
+        }
+    }
+
+    div.tab {
+        width: 100vw;
+        height: 5vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        a {
+            display: block;
+            padding: 0px 3px;
+            padding-bottom: 4px;
+            margin: 0 5px;
+            color: #000;
+            border-bottom: 2px solid #000;
         }
     }
 
@@ -217,6 +320,20 @@ export default {
             align-items: center;
             justify-content: center;
             color: #666;
+        }
+    }
+
+    .product_function_corpus {
+        width: 86vw;
+        height: 90px;
+        overflow: hidden;
+        padding: 0 7vw;
+        margin-bottom: 10px;
+
+        li {
+            padding-top: 5px;
+            color: #666;
+            font-size: 12px;
         }
     }
 

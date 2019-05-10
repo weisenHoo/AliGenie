@@ -14,6 +14,8 @@
     "cssnano": "^4.1.10",
     "genie-sdk": "^1.1.0",
     "genie-ui": "^1.1.0",
+    "global": "^4.3.2",
+    "lzip": "^1.0.10",
     "postcss-aspect-ratio-mini": "^1.0.1",
     "postcss-cssnext": "^3.1.0",
     "postcss-px-to-viewport": "^1.1.0",
