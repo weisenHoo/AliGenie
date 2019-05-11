@@ -1,18 +1,14 @@
 <template>
     <div class="main">
         <!-- 设备信息 -->
-        <div class="deviceInfo" @touchstart="onTouch" @touchmove="touchMove">
-            <div class="mask" :style="`opacity: ${temp};`"></div>
-            <div class="title">
-                <icon class="i" icon="iconzuo" @click="back"></icon>
-                {{navBarData.title}}
-            </div>
+        <div class="deviceInfo" @touchstart="touchStart" @touchmove="touchMoveLight">
+            <div class="mask" :style="`opacity: ${CTV/100};`"></div>
             <div class="controller_block">
                 <span class="slider slider-top">
                     上下滑动调节亮度
                     <icon class="i" icon="iconsanjiantou" iconColor="#fff" :iconSize="50"/>
                 </span>
-                <div class="prm">{{deviceStatus.brightness}}%</div>
+                <div class="prm">{{temp}}%</div>
                 <span class="slider slider-right">
                     左右滑动调节色温
                     <icon class="i" icon="iconsanjiantou" iconColor="#fff" :iconSize="50"/>
@@ -28,25 +24,21 @@
 
         <!-- 控制 -->
         <div class="btn_group" v-show="tab1">
-            <a class="btn" href="javascript:;" @click="onOpen">
+            <a class="btn" href="javascript:;" @click="setDeviceStatus('powerstate',deviceStatus.powerstate ? 0 : 1)">
                 <icon icon="iconiconset0253" :iconSize="30" :iconColor="deviceStatus.powerstate?'#666':'#ccc'"/>
-                <br>
-                开关
+                <br>开关
             </a>
-            <a class="btn" href="javascript:;" @click="onMode('movie')">
-                <icon icon="iconiconset0163" :iconSize="30" iconColor="#ccc"/>
-                <br>
-                听音乐
+            <a class="btn" href="javascript:;" @click="setDeviceStatus('mode',4)">
+                <icon icon="iconiconset0163" :iconSize="30" :iconColor="deviceStatus.powerstate?'#666':'#ccc'"/>
+                <br>听音乐
             </a>
-            <a class="btn" href="javascript:;" @click="onMode('night')">
-                <icon icon="iconmoonyueliang" :iconSize="30" iconColor="#ccc"/>
-                <br>
-                小夜灯
+            <a class="btn" href="javascript:;" @click="setDeviceStatus('mode',6)">
+                <icon icon="iconmoonyueliang" :iconSize="30" :iconColor="deviceStatus.powerstate?'#666':'#ccc'"/>
+                <br>小夜灯
             </a>
-            <a class="btn" href="javascript:;" @click="onMode('reading')">
-                <icon icon="iconshudian" :iconSize="30" iconColor="#ccc"></icon>
-                <br>
-                看书
+            <a class="btn" href="javascript:;" @click="setDeviceStatus('mode',3)">
+                <icon icon="iconshudian" :iconSize="30" :iconColor="deviceStatus.powerstate?'#666':'#ccc'"/>
+                <br>看书
             </a>
         </div>
 
@@ -83,7 +75,8 @@ export default {
       startPosY: 0,
       lastPosX: 0,
       lastPosY: 0,
-      temp: 0.2,
+      temp: 0,
+      CTV: 50,
       deviceActions: {},
       productFunctionCorpus: {},
       tab1: 1,
@@ -94,17 +87,15 @@ export default {
     ...mapState({
       // 设备标题
       navBarData: state => state.base.navBarData,
-
       // 产品信息详情
       productInfo: state => {
-        const base = state.base.productInfo
-        // return state.base.productInfo;
+        const base = state.base.productInfo;
         return base;
       },
-
       // 设备status
       deviceStatus(state) {
         const attr = state.publicInfo.attr;
+        this.temp = state.publicInfo.attr.brightness;
         return attr
       },
     }),
@@ -120,6 +111,9 @@ export default {
   },
   mounted() {
     this.getDeviceActions();
+    AI.getDeviceActions({devId: AI.devId}).then(res => {
+      console.log(res);
+    });
   },
   methods: {
     // 设置topbar
@@ -128,59 +122,58 @@ export default {
         title: this.productInfo.title,
       })
     },
-    onTouch(event) {
+    touchStart(event) {
       // 获取起始坐标位置x，y
       this.startPosX = Math.ceil(event.touches[0].clientX);
       this.startPosY = Math.ceil(event.touches[0].clientY);
     },
-    touchMove(event) {
-      // 获取移动坐标位置x，y
-      let LPX = Math.ceil(event.touches[0].clientX);
+    touchMoveLight(event) {
+      // 获取移动坐标位置y
       let LPY = Math.ceil(event.touches[0].clientY);
-      if (Math.abs(LPX - this.startPosX) > Math.abs(LPX - this.startPosY)) {
-        this.lastPosX = this.lastPosX + LPX - this.startPosX;
-        if (this.temp > 1) {
-          this.temp = 1
-        } else if (this.temp < 0) {
-          this.temp = 0
-        } else {
-          this.temp = this.lastPosX;
-          console.log(this.temp)
-        }
-      } else {
-        this.lastPosY = this.lastPosY + (this.startPosY - LPY)
+      // 计算手指在y轴上移动的距离
+      let distanceY = this.startPosY - LPY;
+      let _temp = parseInt(this.temp);
+      _temp = _temp + parseInt(distanceY / 100);
+
+      if (_temp > 100) {
+        _temp = 100;
+      } else if (_temp < 3) {
+        _temp = 3;
       }
+
+      let LPX = Math.ceil(event.touches[0].clientX);
+      let distanceX = LPX - this.startPosX;
+      let colorTemperature = parseInt(this.CTV);
+      colorTemperature = colorTemperature + parseInt(distanceX / 100);
+
+      if (colorTemperature > 100) {
+        colorTemperature = 100;
+      } else if (colorTemperature < 0) {
+        colorTemperature = 0;
+      }
+
+      if (Math.abs(distanceX) > Math.abs(distanceY)) {
+        this.setDeviceStatus('colorTemperature', colorTemperature);
+        this.CTV = colorTemperature;
+        console.log(colorTemperature);
+      } else {
+        this.setDeviceStatus('brightness', _temp);
+        console.log(_temp);
+      }
+
+      this.setDeviceStatus('brightness', _temp);
     },
-    back() {
-      AI.goBack()
-    },
-    onOpen() {
+    setDeviceStatus(status, value) {
+      // 开关：powerstate、亮度：brightness、模式：mode、色温：colorTemperature
+      if (status !== 'powerstate' && this.deviceStatus.powerstate === 0) {
+        this.$toast({
+          text: '先开灯',
+          duration: 2500
+        });
+        return false;
+      }
       this.$store.dispatch('setDeviceStatus', {
-        powerstate: !this.deviceStatus.powerstate
-      });
-    },
-    onMode(mode) {
-      AI.setDeviceStatus({
-        devId: AI.devId,
-        params: {
-          // 'header': {
-          //   'namespace': 'AliGenie.Iot.Device.Control',
-          //   'name': 'SetMode',
-          //   'messageId': '1bd5d003-31b9-476f-ad03-71d471922820',
-          //   'payLoadVersion': 1
-          // },
-          'payload': {
-            // 'accessToken': AI.productKey,
-            // 'deviceId': this.productInfo.devTypeId,
-            // 'deviceType': this.productInfo.devTypeEn,
-            // 'attribute': 'mode',
-            'value': mode,
-            // 'extensions': {
-            //   'extension1': '',
-            //   'extension2': ''
-            // }
-          }
-        }
+        [status]: value
       });
     },
     getDeviceActions() {
@@ -214,42 +207,24 @@ export default {
         height: 60vh;
         margin-bottom: 10px;
         background-color: #fff;
+        background: linear-gradient(135deg, rgb(231, 231, 229), rgb(175, 234, 242));
         // 背景色
-        background: linear-gradient(135deg, rgb(255, 210, 160), rgb(255, 123, 15)); /* 标准的语法 */
         position: relative;
 
         div.mask {
             opacity: 0.9;
             width: 100vw;
             height: 60vh;
-            background: linear-gradient(135deg, rgb(231, 231, 229), rgb(175, 234, 242)); /* 标准的语法 */
+            background: linear-gradient(135deg, rgb(255, 210, 160), rgb(255, 123, 15));
             position: absolute;
             bottom: 0;
             left: 0;
         }
 
-        div.title {
-            width: 100vw;
-            height: 5vh;
-            /*margin-top: 50px;*/
-            padding-top: 3vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-
-            .i {
-                width: 5vh;
-                height: 5vh;
-                position: absolute;
-                bottom: 0;
-                left: 0;
-            }
-        }
-
         div.controller_block {
             width: 100vw;
             height: 52vh;
+            padding-top: 8vh;
             display: flex;
             flex-direction: column;
             align-items: center;

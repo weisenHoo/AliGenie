@@ -1,6 +1,6 @@
 <template>
     <div id="appview">
-        <!--<iot-header :data='navBarData'></iot-header>-->
+        <iot-header :data='navBarData'></iot-header>
         <router-view/>
     </div>
 </template>
