@@ -1,0 +1,58 @@
+.controlArea {
+  width: 100vw;
+  height: 60vh;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, rgb(255, 210, 160), rgb(255, 123, 15));
+  // 背景色
+  position: relative;
+
+  div.mask {
+    opacity: 0.9;
+    width: 100vw;
+    height: 60vh;
+    background: linear-gradient(135deg, rgb(231, 231, 229), rgb(175, 234, 242));
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
+
+  div.controller_block {
+    width: 100vw;
+    height: 52vh;
+    padding-top: 8vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    position: relative;
+
+    span.slider {
+      width: 86vw;
+      height: 60px;
+      line-height: 60px;
+      padding: 0 7vw;
+      text-align: center;
+      color: #fff;
+      opacity: 0.5;
+      position: relative;
+
+      .i {
+        position: absolute;
+        right: 20px;
+        bottom: 0px;
+      }
+    }
+
+    span.slider-top {
+      .i {
+        transform: rotate(-90deg);
+        bottom: 16px;
+      }
+    }
+
+    div.prm {
+      color: #fff;
+      font-size: 40px;
+    }
+  }
+}
