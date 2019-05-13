@@ -40,7 +40,7 @@ export default {
     }),
   },
   created() {
-    console.log('this.$route.query：', this.$route.query);
+    // console.log('this.$route.query：', this.$route.query);
     this.$nextTick(() => {
       this.setNavbar(); // 设置topbar
     });
@@ -50,6 +50,9 @@ export default {
   },
   mounted() {
     // null
+    Discover.Response().then(res => {
+      console.log(res);
+    });
   },
   methods: {
     // 设置topbar

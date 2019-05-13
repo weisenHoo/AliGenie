@@ -2,7 +2,7 @@ export default {
   base: {
     env: 'dev',
     platform: 'genie',
-    icon: ['//at.alicdn.com/t/font_1182566_c3q78dl4wg.js'],
+    icon: ['//at.alicdn.com/t/font_1182566_akkrg8cbktk.js'],
     deviceInfo: {}
   },
   debug: {

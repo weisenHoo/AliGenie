@@ -33,8 +33,5 @@ export default {
     body {
         margin: 0;
         height: 100%;
-        #appview.hasH5bar{
-            padding-top: 0;
-        }
     }
 </style>
