@@ -1,14 +1,11 @@
 <template>
     <div class="main">
         <!-- 设备信息 -->
-        <controlAreaModel></controlAreaModel>
+        <controlAreaModel/>
        <!--按钮开关-->
-        <tabControllerModel></tabControllerModel>
+        <tabControllerModel/>
         <!-- 时间设置 -->
-        <div class="setting">
-            开：10:00&nbsp;&nbsp;&nbsp;&nbsp;关：12:30
-            <icon icon="iconiconset0420"></icon>
-        </div>
+        <settingModel/>
     </div>
 </template>
 
@@ -17,11 +14,12 @@ import {mapState} from 'vuex';
 import {Icon} from 'genie-ui';
 // model
 import controlAreaModel from '../../model/controlAreaModel';
-import tabControllerModel from '../../model/tabControllerModel'
+import tabControllerModel from '../../model/tabControllerModel';
+import settingModel from '../../model/settingModel';
 
 export default {
   name: 'Main',
-  components: {Icon, controlAreaModel, tabControllerModel},
+  components: {Icon, controlAreaModel, tabControllerModel, settingModel},
   data() {
     return {};
   },
@@ -49,10 +47,7 @@ export default {
     AI.allListenRemove(); // 页面兼听事件取消
   },
   mounted() {
-    // null
-    Discover.Response().then(res => {
-      console.log(res);
-    });
+    // @TODO: mounted
   },
   methods: {
     // 设置topbar
@@ -67,5 +62,5 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="less" scoped>
-    @import './index';
+
 </style>

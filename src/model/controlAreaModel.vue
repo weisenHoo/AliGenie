@@ -47,7 +47,6 @@ export default {
       // 设备status
       deviceStatus(state) {
         const attr = state.publicInfo.attr;
-        console.log(33);
         return attr
       },
     }),
@@ -74,6 +73,11 @@ export default {
       this.v_s = 0;
       clearTimeout(timer);
     }, 6000);
+
+    setInterval(() => {
+      this.brightnessTemp = this.deviceStatus.brightness;
+      this.colorTemp = this.deviceStatus.colorTemperature;
+    }, 1000);
   },
   methods: {
     // 获取设备完整信息
