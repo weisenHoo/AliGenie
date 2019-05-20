@@ -8,10 +8,18 @@
             </span>
             <div class="slider-center">
                 <div class="prm">
+                    <div class="_set" v-show="setShow">
+                        <icon class="i" icon="iconjia" iconColor="#fff" :iconSize="18" @click="settingMode('brightness','plus')"/>
+                        <icon class="i" icon="iconjian" iconColor="#fff" :iconSize="18" @click="settingMode('brightness','less')"/>
+                    </div>
                     <icon class="i" icon="iconbrightj2" iconColor="#fff" :iconSize="32"/>
                     {{brightnessTemp}}%
                 </div>
                 <div class="prm">
+                    <div class="_set" v-show="setShow">
+                        <icon class="i" icon="iconjia" iconColor="#fff" :iconSize="18" @click="settingMode('colorTemperature','plus')"/>
+                        <icon class="i" icon="iconjian" iconColor="#fff" :iconSize="18" @click="settingMode('colorTemperature','less')"/>
+                    </div>
                     <icon class="i" icon="iconhekriconwendusewen" iconColor="#fff" :iconSize="32"/>
                     {{colorTemp}}%
                 </div>
@@ -40,6 +48,7 @@ export default {
       colorTemp: 50,
       v_s: 1,
       getC: 0,
+      setShow: 0,
     };
   },
   computed: {
@@ -68,6 +77,11 @@ export default {
       this.colorTemp = data;
     });
 
+    // 监听设置按钮传过来的设置指令
+    bus.$on('setShow', (data) => {
+      this.setShow = data;
+    });
+
     // 定时隐藏提示
     let timer = setTimeout(() => {
       this.v_s = 0;
@@ -90,11 +104,12 @@ export default {
         });
       }
     },
+    // 获取起始坐标位置x，y
     touchStart(event) {
-      // 获取起始坐标位置x，y
       this.startPosX = Math.ceil(event.touches[0].clientX);
       this.startPosY = Math.ceil(event.touches[0].clientY);
     },
+    // 触摸控制
     touchMoveLight(event) {
       // 获取移动坐标位置y
       let LPY = Math.ceil(event.touches[0].clientY);
@@ -130,7 +145,35 @@ export default {
 
       this.setDeviceStatus('brightness', _temp);
     },
-    // 这个方法是可以做成复用的
+    // 调节模式
+    settingMode(mode, fun) {
+      let _val = 0;
+      if (mode === 'brightness') {
+        if (fun === 'plus') {
+          _val = this.deviceStatus.brightness + 1;
+        } else if (fun === 'less') {
+          _val = this.deviceStatus.brightness - 1;
+        }
+        if (_val > 100) {
+          _val = 100;
+        } else if (_val < 3) {
+          _val = 3
+        }
+      } else if (mode === 'colorTemperature') {
+        if (fun === 'plus') {
+          _val = this.deviceStatus.colorTemperature + 1;
+        } else if (fun === 'less') {
+          _val = this.deviceStatus.colorTemperature - 1;
+        }
+        if (_val > 100) {
+          _val = 100;
+        } else if (_val < 0) {
+          _val = 0
+        }
+      }
+      this.setDeviceStatus(mode, _val);
+    },
+    // 这个方法是可以做成复用的?
     setDeviceStatus(status, value) {
       // 开关：powerstate、亮度：brightness、模式：mode、色温：colorTemperature
       this.$store.dispatch('setDeviceStatus', {

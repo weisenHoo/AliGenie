@@ -33,7 +33,7 @@ export default {
      */
     deviceStatusPolling({ commit }) {
       AI.deviceStatusPolling((resp) => {
-        // console.log('返回的状态：', resp.model);
+        console.log('返回的状态：', resp.model);
         // 更新设备状态
         commit('updateDeviceStatus', { data: resp.model })
       }, (error) => {

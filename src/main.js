@@ -5,7 +5,7 @@ import App from './App'
 import router from './router'
 import store from './store'
 import deviceConfig from './device-config'
-import {Toast} from 'genie-ui';
+import {Toast, Confirm} from 'genie-ui';
 
 // px 转 vm
 import viewportUnitsBuggyfill from 'viewport-units-buggyfill'
@@ -17,6 +17,7 @@ viewportUnitsBuggyfill.init({
 
 Vue.use(Vuex);
 Vue.use(Toast);
+Vue.use(Confirm);
 Vue.config.productionTip = false;
 
 connect(Vue, {

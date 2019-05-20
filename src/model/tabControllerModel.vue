@@ -14,6 +14,12 @@
             >命令</a>
         </div>
 
+        <div class="settingMode" v-show="settingShow">
+            <a class="setModeBtn" href="javascript:;" v-show="!setShow" @click="setModeInstruction">设置</a>
+            <a class="confirmModeBtn" href="javascript:;" v-show="setShow" @click="customizeMode">确认</a>
+            <a class="confirmModeBtn" href="javascript:;" v-show="setShow" @click="cancelMode">取消</a>
+        </div>
+
         <!-- 控制 -->
         <div class="btn_group" v-show="tab1">
             <a
@@ -94,6 +100,8 @@ export default {
       tab1: 1,
       tab2: 0,
       mode: 0,
+      settingShow: 0,
+      setShow: 0,
     };
   },
   computed: {
@@ -122,78 +130,128 @@ export default {
       this.$store.dispatch('setDeviceStatus', {
         powerstate: this.deviceStatus.powerstate ? 0 : 1
       });
+
+      if (!this.deviceStatus.powerstate) this.settingShow = 0;
     },
     // 听音乐模式
     onMusic() {
-      // 判断灯是否已经开启
-      if (!this.deviceStatus.powerstate) {
-        this.$store.dispatch('setDeviceStatus', {
-          powerstate: 1
-        });
+      if (!localStorage.getItem('misicMode')) {
+        // 储存模式
+        localStorage.setItem('misicMode', JSON.stringify({
+          brightness: 80,
+          colorTemperature: 8.8,
+        }));
       }
 
-      // 设置亮度
-      this.$store.dispatch('setDeviceStatus', {
-        brightness: 80
-      });
+      // 判断灯是否已经开启
+      if (!this.deviceStatus.powerstate) this.onOpen();
 
-      // 设置色温
+      let _mode = localStorage.getItem('misicMode') || '';
+      _mode = JSON.parse(_mode);
+
+      // 设置亮度&色温
       this.$store.dispatch('setDeviceStatus', {
-        colorTemperature: 8.8
+        brightness: _mode.brightness,
+        colorTemperature: _mode.colorTemperature,
       });
 
       // 改变控制面板的数值
       bus.$emit('grtC', 1);
-      bus.$emit('brightness', 80);
-      bus.$emit('colorTemperature', 8.8);
+      bus.$emit('brightness', _mode.brightness);
+      bus.$emit('colorTemperature', _mode.colorTemperature);
+
+      this.settingShow = 1;
     },
     // 夜灯模式
     onNightLight() {
-      // 判断灯是否已经开启
-      if (!this.deviceStatus.powerstate) {
-        this.$store.dispatch('setDeviceStatus', {
-          powerstate: 1
-        });
+      if (!localStorage.getItem('nightMode')) {
+        // 储存模式
+        localStorage.setItem('nightMode', JSON.stringify({
+          brightness: 3,
+          colorTemperature: 0,
+        }));
       }
 
-      // 设置亮度
-      this.$store.dispatch('setDeviceStatus', {
-        brightness: 3
-      });
+      // 判断灯是否已经开启
+      if (!this.deviceStatus.powerstate) this.onOpen();
 
-      // 设置色温
+      let _mode = localStorage.getItem('nightMode') || '';
+      _mode = JSON.parse(_mode);
+
+      // 设置亮度&色温
       this.$store.dispatch('setDeviceStatus', {
-        colorTemperature: 0
+        brightness: _mode.brightness,
+        colorTemperature: _mode.colorTemperature,
       });
 
       // 改变控制面板的数值
       bus.$emit('grtC', 1);
-      bus.$emit('brightness', 3);
-      bus.$emit('colorTemperature', 0);
+      bus.$emit('brightness', _mode.brightness);
+      bus.$emit('colorTemperature', _mode.colorTemperature);
+
+      this.settingShow = 1;
     },
     // 阅读模式
     onReading() {
-      // 判断灯是否已经开启
-      if (!this.deviceStatus.powerstate) {
-        this.$store.dispatch('setDeviceStatus', {
-          powerstate: 1
-        });
+      if (!localStorage.getItem('readMode')) {
+        // 储存模式
+        localStorage.setItem('readMode', JSON.stringify({
+          brightness: 100,
+          colorTemperature: 50,
+        }));
       }
 
-      // 设置亮度
-      this.$store.dispatch('setDeviceStatus', {
-        brightness: 100
-      });
+      // 判断灯是否已经开启
+      if (!this.deviceStatus.powerstate) this.onOpen();
 
-      // 设置色温
+      let _mode = localStorage.getItem('readMode') || '';
+      _mode = JSON.parse(_mode);
+
+      // 设置亮度&色温
       this.$store.dispatch('setDeviceStatus', {
-        colorTemperature: 50
+        brightness: _mode.brightness,
+        colorTemperature: _mode.colorTemperature,
       });
 
       // 改变控制面板的数值
       bus.$emit('grtC', 1);
-      bus.$emit('brightness', 100);
-      bus.$emit('colorTemperature', 50);
+      bus.$emit('brightness', _mode.brightness);
+      bus.$emit('colorTemperature', _mode.colorTemperature);
+
+      this.settingShow = 1;
+    },
+    // 把设置指令传到控制台上
+    setModeInstruction() {
+      this.setShow = 1;
+      bus.$emit('setShow', 1);
+    },
+    // 自定义模式
+    customizeMode() {
+      if (this.mode === 4) {
+        // 听音乐
+        localStorage.setItem('misicMode', JSON.stringify({
+          brightness: this.deviceStatus.brightness,
+          colorTemperature: this.deviceStatus.colorTemperature,
+        }))
+      } else if (this.mode === 6) {
+        // 小夜灯
+        localStorage.setItem('nightMode', JSON.stringify({
+          brightness: this.deviceStatus.brightness,
+          colorTemperature: this.deviceStatus.colorTemperature,
+        }))
+      } else if (this.mode === 3) {
+        // 看书
+        localStorage.setItem('readMode', JSON.stringify({
+          brightness: this.deviceStatus.brightness,
+          colorTemperature: this.deviceStatus.colorTemperature,
+        }));
+      }
+      this.setShow = 0;
+      bus.$emit('setShow', 0);
+    },
+    cancelMode() {
+      this.setShow = 0;
+      bus.$emit('setShow', 0);
     },
   },
 };

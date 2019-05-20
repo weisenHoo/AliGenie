@@ -5,7 +5,7 @@
        <!--按钮开关-->
         <tabControllerModel/>
         <!-- 时间设置 -->
-        <settingModel/>
+        <!--<settingModel/>-->
     </div>
 </template>
 
@@ -33,7 +33,7 @@ export default {
       // 设备status
       deviceStatus(state) {
         const attr = state.publicInfo.attr;
-        return attr
+        return attr;
       },
     }),
   },
@@ -48,6 +48,13 @@ export default {
   },
   mounted() {
     // @TODO: mounted
+    // 获取设备完整信息
+    AI.getDeviceActions({devId: AI.devId}).then((res) => {
+      if (res.code !== 'SUCCEED') return false;
+      console.log(res);
+    }).catch((res) => {
+      console.log('失败返回', res);
+    });
   },
   methods: {
     // 设置topbar
